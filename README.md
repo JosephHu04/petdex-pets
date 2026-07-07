@@ -24,7 +24,7 @@ petdex install cn-peashooter
 
 ```bash
 # 克隆仓库
-git clone https://github.com/YOUR_USERNAME/petdex-pets.git
+git clone https://github.com/JosephHu04/petdex-pets.git
 
 # 复制到 Petdex 目录
 cp -r petdex-pets/peashooter ~/.petdex/pets/
