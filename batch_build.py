@@ -8,13 +8,28 @@ COLS, ROWS = 8, 9
 W, H = 1536, 1872
 SW, SH = W // COLS, H // ROWS
 
+def natural_sort_key(name):
+    """Extract numeric parts for natural sorting (1,2,3...10,11 not 1,10,11,2)."""
+    import re
+    parts = re.split(r'(\d+)', name)
+    return [int(p) if p.isdigit() else p for p in parts]
+
 def load_frames(zpath):
     with zipfile.ZipFile(zpath, 'r') as z:
-        names = sorted([n for n in z.namelist()
-                       if 'Assembled Sprites' in n and n.endswith('.png')])
+        names = [n for n in z.namelist() if 'Assembled Sprites' in n and n.endswith('.png')]
         if not names:
-            names = sorted([n for n in z.namelist() if n.endswith('.png')])
-        return [Image.open(io.BytesIO(z.read(n))).convert('RGBA') for n in names]
+            names = [n for n in z.namelist() if n.endswith('.png')]
+        names.sort(key=natural_sort_key)
+        frames = []
+        for n in names:
+            img = Image.open(io.BytesIO(z.read(n))).convert('RGBA')
+            # Filter out body parts / tiny sprites (content width < 80px)
+            arr = np.array(img)
+            a = arr[:,:,3] if arr.shape[-1]>=4 else np.ones(arr.shape[:2])*255
+            ys, xs = np.where(a > 20)
+            if len(xs) > 0 and (xs.max() - xs.min()) >= 80:
+                frames.append(img)
+        return frames
 
 def analyze(frames):
     stats = []; prev = None; diffs = []
@@ -239,6 +254,11 @@ def build_one(zpath, pet_id, name, desc):
 # ═══════════════════════════════════════════════════════════════
 DOWNLOADS = '/Users/xxx/Downloads'
 PETS = [
+    # Ben 10
+    ("Cannonbolt", "cannonbolt", "Cannonbolt", "Cannonbolt — the rolling armored alien from Ben 10!"),
+    ("Heatblast", "heatblast", "Heatblast", "Heatblast — the fiery Pyronite from Ben 10!"),
+    ("Wildvine", "wildvine", "Wildvine", "Wildvine — the stretchy plant alien from Ben 10!"),
+    # PvZ2
     ("A.K.E.E.", "akee", "A.K.E.E.", "A.K.E.E. — bouncing seed-shooter from PvZ2!"),
     ("Cactus", "cactus", "Cactus", "Cactus — spiky desert sniper from PvZ2!"),
     ("Adventurer Zombie", "adventurer-zombie", "Adventurer Zombie", "Adventurer Zombie — exploring your desktop!"),
